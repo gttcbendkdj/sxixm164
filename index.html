@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>卡密验证</title>
+    <!-- 引入图标库 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Segoe UI', sans-serif;
+        }
+        /* 极简背景（低饱和单色） */
+        body {
+            min-height: 100vh;
+            background-color: #f9fafb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        /* 主容器（简约卡片） */
+        .verify-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: white;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            padding: 45px 30px;
+            transition: transform 0.3s ease;
+        }
+        .verify-container:hover {
+            transform: translateY(-3px);
+        }
+        /* 标题区（简约文字） */
+        .title {
+            font-size: 24px;
+            color: #1f2937;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 40px;
+            letter-spacing: 0.3px;
+        }
+        /* 输入框组（极简线条） */
+        .input-group {
+            margin-bottom: 30px;
+        }
+        #codeInput {
+            width: 100%;
+            padding: 16px 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            font-size: 16px;
+            color: #1f2937;
+            background-color: transparent;
+            transition: all 0.25s ease;
+            outline: none;
+        }
+        #codeInput:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08);
+        }
+        #codeInput::placeholder {
+            color: #9ca3af;
+            font-weight: 400;
+        }
+        /* 按钮（低饱和渐变+简约） */
+        #checkBtn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, #6366f1, #818cf8);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        #checkBtn:hover {
+            background: linear-gradient(90deg, #4f46e5, #6366f1);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+        }
+        #checkBtn:active {
+            transform: scale(0.98);
+        }
+        /* 内容展示区（轻量卡片） */
+        #contentBox {
+            margin-top: 30px;
+            padding: 22px;
+            border-radius: 14px;
+            font-size: 15px;
+            line-height: 1.7;
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* 成功/错误样式（低饱和配色） */
+        .success {
+            background-color: #f0fdf4;
+            color: #166534;
+            border: 1px solid #dcfce7;
+        }
+        .error {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecdd3;
+        }
+        /* 加载动画（简约风格） */
+        .loader {
+            width: 18px;
+            height: 18px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        /* 底部提示（极简小字） */
+        .tips {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <div class="verify-container">
+        <!-- 标题 -->
+        <h2 class="title">卡密验证</h2>
+
+        <!-- 卡密输入框 -->
+        <div class="input-group">
+            <input 
+                type="text" 
+                id="codeInput" 
+                placeholder="请输入卡密" 
+                autocomplete="off"
+                maxlength="20"
+            >
+        </div>
+
+        <!-- 验证按钮 -->
+        <button id="checkBtn">
+            <<i class="fa fa-check-circle-o" aria-hidden="true"></</i>
+            <span class="btn-text">验证</span>
+            <span class="loader"></span>
+        </button>
+
+        <!-- 底部小字提示 -->
+        <div class="tips">输入后点击验证，查看专属内容</div>
+
+        <!-- 内容展示区 -->
+        <div id="contentBox"></div>
+    </div>
+
+    <script>
+        // 1. 预设卡密与对应内容
+        const codeData = {
+          "KEY001": "内容1：恭喜解锁专属资源...",
+          "XDnbF7HmMVIP": "账号:epore@xinchen.de5.net 密码:gerxiepo 2fa:https://2fa.run/2fa/2aaabbbwwww uid:615791679",
+           "dQDH-4zPR-VWVM-dZdR": ":615791679",
+        };
+
+        // 2. 获取页面元素
+        const codeInput = document.getElementById('codeInput');
+        const checkBtn = document.getElementById('checkBtn');
+        const btnText = document.querySelector('.btn-text');
+        const loader = document.querySelector('.loader');
+        const contentBox = document.getElementById('contentBox');
+
+        // 3. 验证逻辑
+        checkBtn.addEventListener('click', async function() {
+            const inputCode = codeInput.value.trim();
+
+            // 空输入判断
+            if (!inputCode) {
+                showContent("请先输入卡密", "error");
+                return;
+            }
+
+            // 显示加载状态
+            btnText.textContent = "验证中";
+            loader.style.display = "inline-block";
+            checkBtn.disabled = true;
+
+            // 模拟网络延迟
+            await new Promise(resolve => setTimeout(resolve, 600));
+
+            // 卡密校验
+            if (codeData[inputCode]) {
+                showContent(codeData[inputCode].replace(/\n/g, '<br>'), "success");
+            } else {
+                showContent("卡密不正确，请重新输入", "error");
+            }
+
+            // 恢复状态
+            btnText.textContent = "验证";
+            loader.style.display = "none";
+            checkBtn.disabled = false;
+        });
+
+        // 4. 内容显示函数
+        function showContent(text, type) {
+            contentBox.style.display = "block";
+            contentBox.className = `#contentBox ${type}`;
+            contentBox.innerHTML = text;
+        }
+
+        // 5. 回车键触发验证
+        codeInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !checkBtn.disabled) {
+                checkBtn.click();
+            }
+        });
+
+        // 6. 输入框聚焦清空内容区
+        codeInput.addEventListener('focus', function() {
+            contentBox.style.display = "none";
+        });
+    </script>
+</body>
+</html>
