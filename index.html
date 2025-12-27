@@ -229,13 +229,16 @@
         </div>
     </div>
 
-    <!-- 引入 imap.js 依赖 -->
+    <!-- 修复依赖加载顺序：先加载 buffer，再加载 imap/mailparser -->
+    <script src="https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js"></script>
+    <script>
+        // 全局暴露 Buffer，解决 imap.js 依赖问题
+        window.Buffer = window.Buffer || Buffer;
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/imap@0.8.19/lib/imap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mailparser@3.6.5/lib/mailparser.min.js"></script>
-    <script>
-        // 兼容浏览器环境的 Buffer 支持
-        window.Buffer = window.Buffer || require('buffer').Buffer;
 
+    <script>
         async function checkEmail() {
             const server = document.getElementById('imap-server').value.trim();
             const username = document.getElementById('email-username').value.trim();
@@ -349,13 +352,7 @@
                 btn.disabled = false;
                 loading.style.display = 'none';
             }
-        } catch (e) {
-            alert('依赖加载失败，请检查网络！');
-            console.error(e);
         }
-    }
     </script>
-    <!-- 引入 buffer 兼容库 -->
-    <script src="https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.min.js"></script>
 </body>
 </html>
